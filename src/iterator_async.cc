@@ -49,7 +49,7 @@ void NextWorker::HandleOKCallback () {
   if (status.code == MDB_NOTFOUND) {
     //std::cerr << "run callback, ended MDB_NOTFOUND\n";
     localCallback(iterator);
-    callback->Run(0, NULL);
+    callback->Call(0, NULL);
     return;
   }
 
@@ -72,12 +72,12 @@ void NextWorker::HandleOKCallback () {
   localCallback(iterator);
 
   v8::Local<v8::Value> argv[] = {
-      v8::Local<v8::Value>::New(v8::Null())
+      NanNewLocal(v8::Null())
     , returnKey
     , returnValue
   };
 
-  callback->Run(3, argv);
+  callback->Call(3, argv);
 }
 
 /** END WORKER **/
@@ -100,7 +100,7 @@ void EndWorker::Execute () {
 void EndWorker::HandleOKCallback () {
   //std::cerr << "EndWorker::HandleOKCallback: " << iterator->id << std::endl;
   iterator->Release();
-  callback->Run(0, NULL);
+  callback->Call(0, NULL);
 }
 
 } // namespace nlmdb

@@ -28,7 +28,7 @@ BatchOp::~BatchOp () {
   DisposeStringOrBufferFromMDVal(keyHandle, key);
 
   if (!persistentHandle.IsEmpty())
-    NanDispose(persistentHandle);
+    NanDisposePersistent(persistentHandle);
 }
 
 BatchDel::BatchDel (v8::Local<v8::Object> &keyHandle, MDB_val key)
