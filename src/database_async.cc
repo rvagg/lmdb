@@ -98,10 +98,10 @@ void ReadWorker::HandleOKCallback () {
     returnValue = v8::String::New((char*)value.mv_data, value.mv_size);
   }
   v8::Local<v8::Value> argv[] = {
-      v8::Local<v8::Value>::New(v8::Null())
+      NanNewLocal(v8::Null())
     , returnValue
   };
-  callback->Run(2, argv);
+  callback->Call(2, argv);
 }
 
 /** DELETE WORKER **/

@@ -269,7 +269,7 @@ NAN_METHOD(Iterator::New) {
           || optionsObj->Get(NanSymbol("start"))->IsString())) {
 
       v8::Local<v8::Value> startBuffer =
-          v8::Local<v8::Value>::New(optionsObj->Get(NanSymbol("start")));
+          NanNewLocal(optionsObj->Get(NanSymbol("start")));
 
       // ignore start if it has size 0 since a Slice can't have length 0
       if (StringOrBufferLength(startBuffer) > 0) {
@@ -283,7 +283,7 @@ NAN_METHOD(Iterator::New) {
           || optionsObj->Get(NanSymbol("end"))->IsString())) {
 
       v8::Local<v8::Value> endBuffer =
-          v8::Local<v8::Value>::New(optionsObj->Get(NanSymbol("end")));
+          NanNewLocal(optionsObj->Get(NanSymbol("end")));
 
       // ignore end if it has size 0 since a Slice can't have length 0
       if (StringOrBufferLength(endBuffer) > 0) {
