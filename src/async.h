@@ -20,8 +20,8 @@ public:
     , NanCallback *callback
   ) : NanAsyncWorker(callback), database(database) {
     NanScope();
-    v8::Local<v8::Object> obj = v8::Object::New();
-    NanAssignPersistent(v8::Object, persistentHandle, obj);
+    v8::Local<v8::Object> obj = NanNew<v8::Object>();
+    NanAssignPersistent(persistentHandle, obj);
   }
 
 protected:
@@ -31,12 +31,12 @@ protected:
     if (status.error.length() != 0) {
       char *e = new char[status.error.length() + 1];
       strcpy(e, status.error.c_str());
-      this->errmsg = e;
+      this->SetErrorMessage(e);
     } else if (status.code != 0) {
       const char *me = mdb_strerror(status.code);
       char *e = new char[strlen(me) + 1];
       strcpy(e, me);
-      this->errmsg = e;
+      this->SetErrorMessage(e);
     }
   }
 

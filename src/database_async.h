@@ -54,7 +54,6 @@ public:
 
 protected:
   MDB_val key;
-  v8::Local<v8::Object> &keyHandle;
 };
 
 class ReadWorker : public IOWorker {

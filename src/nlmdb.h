@@ -82,9 +82,7 @@ static inline uint64_t UInt64OptionValue(
 #define NL_RETURN_CALLBACK_OR_ERROR(callback, msg)                             \
   if (!callback.IsEmpty() && callback->IsFunction()) {                         \
     v8::Local<v8::Value> argv[] = {                                            \
-      v8::Local<v8::Value>::New(v8::Exception::Error(                          \
-        v8::String::New(msg))                                                  \
-      )                                                                        \
+      NanError(msg)                                                            \
     };                                                                         \
     NL_RUN_CALLBACK(callback, argv, 1)                                         \
     NanReturnUndefined();                                                      \
@@ -93,7 +91,8 @@ static inline uint64_t UInt64OptionValue(
 
 #define NL_RUN_CALLBACK(callback, argv, length)                                \
   v8::TryCatch try_catch;                                                      \
-  callback->Call(v8::Context::GetCurrent()->Global(), length, argv);           \
+  NanMakeCallback(                                                             \
+    NanGetCurrentContext()->Global(), callback, length, argv);                 \
   if (try_catch.HasCaught()) {                                                 \
     node::FatalException(try_catch);                                           \
   }
@@ -134,17 +133,9 @@ static inline void DisposeStringOrBufferFromMDVal(
       v8::Local<v8::Object> handle
     , MDB_val val) {
 
+  NanScope();
   if (!node::Buffer::HasInstance(handle))
     delete[] (char*)val.mv_data;
-}
-
-static inline void DisposeStringOrBufferFromMDVal(
-      v8::Persistent<v8::Object> &handle
-    , MDB_val val) {
-
-  if (!node::Buffer::HasInstance(NanPersistentToLocal(handle)->Get(NanSymbol("obj"))))
-    delete[] (char*)val.mv_data;
-  NanDispose(handle);
 }
 
 // NOTE: must call DisposeStringOrBufferFromMDVal() on objects created here

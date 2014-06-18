@@ -10,14 +10,15 @@
 namespace nlmdb {
 
 void Init (v8::Handle<v8::Object> target) {
+  NanScope();
   Database::Init();
   WriteBatch::Init();
   Iterator::Init();
 
   v8::Local<v8::Function> nlmdb =
-      v8::FunctionTemplate::New(NLMDB)->GetFunction();
+      NanNew<v8::FunctionTemplate>(NLMDB)->GetFunction();
 
-  target->Set(v8::String::NewSymbol("nlmdb"), nlmdb);
+  target->Set(NanNew("nlmdb"), nlmdb);
 }
 
 NODE_MODULE(nlmdb, Init)

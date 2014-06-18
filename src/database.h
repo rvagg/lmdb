@@ -40,28 +40,6 @@ typedef struct OpenOptions {
 
 NAN_METHOD(NLMDB);
 
-struct Reference {
-  v8::Persistent<v8::Object> handle;
-  MDB_val val;
-
-  Reference(v8::Local<v8::Value> obj, MDB_val val) : val(val) {
-    v8::Local<v8::Object> _obj = v8::Object::New();
-    _obj->Set(NanSymbol("obj"), obj);
-    NanAssignPersistent(v8::Object, handle, _obj);
-  };
-  // TODO: unpersist this baby... probably easier as a class
-};
-
-static inline void ClearReferences (std::vector<Reference *> *references) {
-  for (std::vector<Reference *>::iterator it = references->begin()
-      ; it != references->end()
-      ; ) {
-    DisposeStringOrBufferFromMDVal((*it)->handle, (*it)->val);
-    it = references->erase(it);
-  }
-  delete references;
-}
-
 /* abstract */ class BatchOp {
  public:
   BatchOp (v8::Local<v8::Object> &keyHandle, MDB_val key);

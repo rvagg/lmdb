@@ -57,9 +57,10 @@ IOWorker::IOWorker (
   , v8::Local<v8::Object> &keyHandle
 ) : AsyncWorker(database, callback)
   , key(key)
-  , keyHandle(keyHandle)
 {
-  SavePersistent("key", keyHandle);
+  NanScope();
+
+  SaveToPersistent("key", keyHandle);
 };
 
 IOWorker::~IOWorker () {}
@@ -90,18 +91,17 @@ void ReadWorker::Execute () {
 
 void ReadWorker::HandleOKCallback () {
   NanScope();
-
   v8::Local<v8::Value> returnValue;
   if (asBuffer) {
     returnValue = NanNewBufferHandle((char*)value.mv_data, value.mv_size);
   } else {
-    returnValue = v8::String::New((char*)value.mv_data, value.mv_size);
+    returnValue = NanNew((char*)value.mv_data, value.mv_size);
   }
   v8::Local<v8::Value> argv[] = {
-      v8::Local<v8::Value>::New(v8::Null())
+      NanNull()
     , returnValue
   };
-  callback->Run(2, argv);
+  callback->Call(2, argv);
 }
 
 /** DELETE WORKER **/
@@ -111,7 +111,7 @@ DeleteWorker::DeleteWorker (
   , MDB_val key
   , v8::Local<v8::Object> &keyHandle
 ) : IOWorker(database, callback, key, keyHandle)
-{};
+{ };
 
 DeleteWorker::~DeleteWorker () {}
 
@@ -129,6 +129,8 @@ void DeleteWorker::WorkComplete () {
 
   // IOWorker does this but we can't call IOWorker::WorkComplete()
   DisposeStringOrBufferFromMDVal(GetFromPersistent("key"), key);
+  delete callback;
+  callback = NULL;
 }
 
 /** WRITE WORKER **/
@@ -143,7 +145,9 @@ WriteWorker::WriteWorker (
   , value(value)
   , valueHandle(valueHandle)
 {
-  SavePersistent("value", valueHandle);
+  NanScope();
+
+  SaveToPersistent("value", valueHandle);
 };
 
 WriteWorker::~WriteWorker () {}
