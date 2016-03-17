@@ -12,23 +12,23 @@
 namespace nlmdb {
 
 BatchOp::BatchOp (v8::Local<v8::Object> &keyHandle, MDB_val key) : key(key) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  v8::Local<v8::Object> obj = v8::Object::New();
-  obj->Set(NanSymbol("key"), keyHandle);
-  NanAssignPersistent(v8::Object, persistentHandle, obj);
+  v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+  obj->Set(Nan::New("key").ToLocalChecked(), keyHandle);
+  persistentHandle.Reset(obj);
 }
 
 BatchOp::~BatchOp () {
-  NanScope();
+  Nan::HandleScope scope;
 
-  v8::Local<v8::Object> handle = NanPersistentToLocal(persistentHandle);
+  v8::Local<v8::Object> handle = Nan::New(persistentHandle);
   v8::Local<v8::Object> keyHandle =
-      handle->Get(NanSymbol("key")).As<v8::Object>();
+      handle->Get(Nan::New("key").ToLocalChecked()).As<v8::Object>();
   DisposeStringOrBufferFromMDVal(keyHandle, key);
 
   if (!persistentHandle.IsEmpty())
-    NanDispose(persistentHandle);
+    persistentHandle.Reset();
 }
 
 BatchDel::BatchDel (v8::Local<v8::Object> &keyHandle, MDB_val key)
@@ -48,16 +48,16 @@ BatchPut::BatchPut (
 ) : BatchOp(keyHandle, key)
   , value(value)
 {
-    v8::Local<v8::Object> handle = NanPersistentToLocal(persistentHandle);
-    handle->Set(NanSymbol("value"), valueHandle);
+    v8::Local<v8::Object> handle = Nan::New(persistentHandle);
+    handle->Set(Nan::New("value").ToLocalChecked(), valueHandle);
 }
 
 BatchPut::~BatchPut () {
-  NanScope();
+  Nan::HandleScope scope;
 
-  v8::Local<v8::Object> handle = NanPersistentToLocal(persistentHandle);
+  v8::Local<v8::Object> handle = Nan::New(persistentHandle);
   v8::Local<v8::Object> valueHandle =
-      handle->Get(NanSymbol("value")).As<v8::Object>();
+      handle->Get(Nan::New("value").ToLocalChecked()).As<v8::Object>();
 
   DisposeStringOrBufferFromMDVal(valueHandle, value);
 }
@@ -77,14 +77,14 @@ WriteBatch::~WriteBatch () {
 }
 
 void WriteBatch::Write (v8::Local<v8::Function> callback) {
-  NanScope();
+  Nan::HandleScope scope;
 
   written = true;
 
   if (operations->size() > 0) {
-    NanAsyncQueueWorker(new BatchWriteWorker(
+    Nan::AsyncQueueWorker(new BatchWriteWorker(
         this
-      , new NanCallback(callback)
+      , new Nan::Callback(callback)
     ));
   } else {
     NL_RUN_CALLBACK(callback, NULL, 0);
@@ -114,35 +114,35 @@ void WriteBatch::Clear () {
   }
 }
 
-static v8::Persistent<v8::FunctionTemplate> writebatch_constructor;
+static Nan::Persistent<v8::FunctionTemplate> writebatch_constructor;
 
 void WriteBatch::Init () {
-  NanScope();
+  Nan::HandleScope scope;
 
-  v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(WriteBatch::New);
-  NanAssignPersistent(v8::FunctionTemplate, writebatch_constructor, tpl);
-  tpl->SetClassName(NanSymbol("Batch"));
+  v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(WriteBatch::New);
+  writebatch_constructor.Reset(tpl);
+  tpl->SetClassName(Nan::New("Batch").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "put", WriteBatch::Put);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "del", WriteBatch::Del);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "clear", WriteBatch::Clear);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "write", WriteBatch::Write);
+  Nan::SetPrototypeMethod(tpl, "put", WriteBatch::Put);
+  Nan::SetPrototypeMethod(tpl, "del", WriteBatch::Del);
+  Nan::SetPrototypeMethod(tpl, "clear", WriteBatch::Clear);
+  Nan::SetPrototypeMethod(tpl, "write", WriteBatch::Write);
 }
 
 NAN_METHOD(WriteBatch::New) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  Database* database = node::ObjectWrap::Unwrap<Database>(args[0]->ToObject());
+  Database* database = Nan::ObjectWrap::Unwrap<Database>(info[0]->ToObject());
   v8::Local<v8::Object> optionsObj;
 
-  if (args.Length() > 1 && args[1]->IsObject()) {
-    optionsObj = v8::Local<v8::Object>::Cast(args[1]);
+  if (info.Length() > 1 && info[1]->IsObject()) {
+    optionsObj = v8::Local<v8::Object>::Cast(info[1]);
   }
 
   WriteBatch* batch = new WriteBatch(database);
-  batch->Wrap(args.This());
+  batch->Wrap(info.This());
 
-  NanReturnValue(args.This());
+  info.GetReturnValue().Set(info.This());
 }
 
 v8::Handle<v8::Value> WriteBatch::NewInstance (
@@ -150,12 +150,12 @@ v8::Handle<v8::Value> WriteBatch::NewInstance (
       , v8::Handle<v8::Object> optionsObj = v8::Handle<v8::Object>()
     ) {
 
-  NanScope();
+  Nan::HandleScope scope;
 
   v8::Local<v8::Object> instance;
 
   v8::Local<v8::FunctionTemplate> constructorHandle =
-      NanPersistentToLocal(writebatch_constructor);
+      Nan::New(writebatch_constructor);
 
   if (optionsObj.IsEmpty()) {
     v8::Handle<v8::Value> argv[] = { database };
@@ -169,84 +169,84 @@ v8::Handle<v8::Value> WriteBatch::NewInstance (
 }
 
 NAN_METHOD(WriteBatch::Put) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  WriteBatch* batch = ObjectWrap::Unwrap<WriteBatch>(args.Holder());
+  WriteBatch* batch = ObjectWrap::Unwrap<WriteBatch>(info.Holder());
 
   if (batch->written) {
-    return NanThrowError("write() already called on this batch");
+    return Nan::ThrowError("write() already called on this batch");
   }
 
   v8::Handle<v8::Function> callback; // purely for the error macros
 
-  NL_CB_ERR_IF_NULL_OR_UNDEFINED(args[0], key)
-  NL_CB_ERR_IF_NULL_OR_UNDEFINED(args[1], value)
+  NL_CB_ERR_IF_NULL_OR_UNDEFINED(info[0], key)
+  NL_CB_ERR_IF_NULL_OR_UNDEFINED(info[1], value)
 
-  v8::Local<v8::Object> keyHandle = args[0].As<v8::Object>();
-  v8::Local<v8::Object> valueHandle = args[1].As<v8::Object>();
+  v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
+  v8::Local<v8::Object> valueHandle = info[1].As<v8::Object>();
   NL_STRING_OR_BUFFER_TO_MDVAL(key, keyHandle, key)
   NL_STRING_OR_BUFFER_TO_MDVAL(value, valueHandle, value)
 
   batch->Put(keyHandle, key, valueHandle, value);
 
-  NanReturnValue(args.Holder());
+  info.GetReturnValue().Set(info.Holder());
 }
 
 NAN_METHOD(WriteBatch::Del) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  WriteBatch* batch = ObjectWrap::Unwrap<WriteBatch>(args.Holder());
+  WriteBatch* batch = ObjectWrap::Unwrap<WriteBatch>(info.Holder());
 
   if (batch->written) {
-    return NanThrowError("write() already called on this batch");
+    return Nan::ThrowError("write() already called on this batch");
   }
 
   v8::Handle<v8::Function> callback; // purely for the error macros
 
-  NL_CB_ERR_IF_NULL_OR_UNDEFINED(args[0], key)
+  NL_CB_ERR_IF_NULL_OR_UNDEFINED(info[0], key)
 
-  v8::Local<v8::Object> keyHandle = args[0].As<v8::Object>();
+  v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
   NL_STRING_OR_BUFFER_TO_MDVAL(key, keyHandle, key)
 
   batch->Delete(keyHandle, key);
 
-  NanReturnValue(args.Holder());
+  info.GetReturnValue().Set(info.Holder());
 }
 
 NAN_METHOD(WriteBatch::Clear) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  WriteBatch* batch = ObjectWrap::Unwrap<WriteBatch>(args.Holder());
+  WriteBatch* batch = ObjectWrap::Unwrap<WriteBatch>(info.Holder());
 
   if (batch->written) {
-    return NanThrowError("write() already called on this batch");
+    return Nan::ThrowError("write() already called on this batch");
   }
 
   batch->Clear();
 
-  NanReturnValue(args.Holder());
+  info.GetReturnValue().Set(info.Holder());
 }
 
 NAN_METHOD(WriteBatch::Write) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  WriteBatch* batch = ObjectWrap::Unwrap<WriteBatch>(args.Holder());
+  WriteBatch* batch = ObjectWrap::Unwrap<WriteBatch>(info.Holder());
 
-  if (args.Length() == 0 || !args[0]->IsFunction()) {
-    return NanThrowError("write() requires a callback argument");
+  if (info.Length() == 0 || !info[0]->IsFunction()) {
+    return Nan::ThrowError("write() requires a callback argument");
   }
 
   if (batch->written) {
-    return NanThrowError("write() already called on this batch");
-  }
-  
-  if (args.Length() == 0) {
-    return NanThrowError("write() requires a callback argument");
+    return Nan::ThrowError("write() already called on this batch");
   }
 
-  batch->Write(args[0].As<v8::Function>());
+  if (info.Length() == 0) {
+    return Nan::ThrowError("write() requires a callback argument");
+  }
 
-  NanReturnUndefined();
+  batch->Write(info[0].As<v8::Function>());
+
+  info.GetReturnValue().SetUndefined();
 }
 
 } // namespace nlmdb

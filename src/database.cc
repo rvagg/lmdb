@@ -65,7 +65,7 @@ void Database::ReleaseIterator (uint32_t id) {
   //std::cerr << "ReleaseIterator: " << iterators.size() << std::endl;
   if (iterators.size() == 0 && pendingCloseWorker != NULL) {
     //std::cerr << "pendingCloseWorker RUNNING\n";
-    NanAsyncQueueWorker((NanAsyncWorker*)pendingCloseWorker);
+    Nan::AsyncQueueWorker((Nan::AsyncWorker*)pendingCloseWorker);
     pendingCloseWorker = NULL;
   }
 }
@@ -253,64 +253,64 @@ int Database::NewIterator (MDB_txn **txn, MDB_cursor **cursor) {
     return rc;
   }
   rc = mdb_cursor_open(*txn, dbi, cursor);
-  
+
   //std::cerr << "opened cursor! " << cursor << ", " << strerror(rc) << std::endl;
   return rc;
 }
 
-static v8::Persistent<v8::FunctionTemplate> database_constructor;
+static Nan::Persistent<v8::FunctionTemplate> database_constructor;
 
 NAN_METHOD(NLMDB) {
-  NanScope();
+  Nan::HandleScope scope;
 
   v8::Local<v8::String> location;
-  if (args.Length() != 0 && args[0]->IsString())
-    location = args[0].As<v8::String>();
-  NanReturnValue(Database::NewInstance(location));
+  if (info.Length() != 0 && info[0]->IsString())
+    location = info[0].As<v8::String>();
+  info.GetReturnValue().Set(Database::NewInstance(location));
 }
 
 void Database::Init () {
-  NanScope();
+  Nan::HandleScope scope;
 
-  v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(Database::New);
-  NanAssignPersistent(v8::FunctionTemplate, database_constructor, tpl);
-  tpl->SetClassName(NanSymbol("Database"));
+  v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(Database::New);
+  database_constructor.Reset(tpl);
+  tpl->SetClassName(Nan::New("Database").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "open", Database::Open);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "close", Database::Close);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "put", Database::Put);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "get", Database::Get);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "del", Database::Delete);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "batch", Database::Batch);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "iterator", Database::Iterator);
+  Nan::SetPrototypeMethod(tpl, "open", Database::Open);
+  Nan::SetPrototypeMethod(tpl, "close", Database::Close);
+  Nan::SetPrototypeMethod(tpl, "put", Database::Put);
+  Nan::SetPrototypeMethod(tpl, "get", Database::Get);
+  Nan::SetPrototypeMethod(tpl, "del", Database::Delete);
+  Nan::SetPrototypeMethod(tpl, "batch", Database::Batch);
+  Nan::SetPrototypeMethod(tpl, "iterator", Database::Iterator);
 }
 
 NAN_METHOD(Database::New) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  if (args.Length() == 0) {
-    return NanThrowError("constructor requires at least a location argument");
+  if (info.Length() == 0) {
+    return Nan::ThrowError("constructor requires at least a location argument");
   }
 
-  if (!args[0]->IsString()) {
-    return NanThrowError("constructor requires a location string argument");
+  if (!info[0]->IsString()) {
+    return Nan::ThrowError("constructor requires a location string argument");
   }
 
-  char* location = FromV8String(args[0]);
+  char* location = FromV8String(info[0]);
 
   Database* obj = new Database(location);
-  obj->Wrap(args.This());
+  obj->Wrap(info.This());
 
-  NanReturnValue(args.This());
+  info.GetReturnValue().Set(info.This());
 }
 
 v8::Handle<v8::Value> Database::NewInstance (v8::Local<v8::String> &location) {
-  NanScope();
+  Nan::HandleScope scope;
 
   v8::Local<v8::Object> instance;
 
   v8::Local<v8::FunctionTemplate> constructorHandle =
-      NanPersistentToLocal(database_constructor);
+      Nan::New(database_constructor);
 
   if (location.IsEmpty()) {
     instance = constructorHandle->GetFunction()->NewInstance(0, NULL);
@@ -323,85 +323,85 @@ v8::Handle<v8::Value> Database::NewInstance (v8::Local<v8::String> &location) {
 }
 
 NAN_METHOD(Database::Open) {
-  NanScope();
+  Nan::HandleScope scope;
 
   NL_METHOD_SETUP_COMMON(open, 0, 1)
 
   OpenOptions options;
 
-  options.createIfMissing = NanBooleanOptionValue(
+  options.createIfMissing = BooleanOptionValueDef(
       optionsObj
-    , NanSymbol("createIfMissing")
+    , Nan::New("createIfMissing").ToLocalChecked()
     , true
   );
-  options.errorIfExists = NanBooleanOptionValue(
+  options.errorIfExists = BooleanOptionValueDef(
       optionsObj
-    , NanSymbol("errorIfExists")
+    , Nan::New("errorIfExists").ToLocalChecked()
   , false);
   options.mapSize = UInt64OptionValue(
       optionsObj
-    , NanSymbol("mapSize")
+    , Nan::New("mapSize").ToLocalChecked()
     , DEFAULT_MAPSIZE
   );
   options.maxReaders = UInt64OptionValue(
       optionsObj
-    , NanSymbol("maxReaders")
+    , Nan::New("maxReaders").ToLocalChecked()
     , DEFAULT_READERS
   );
-  options.sync = NanBooleanOptionValue(
+  options.sync = BooleanOptionValueDef(
       optionsObj
-    , NanSymbol("sync")
+    , Nan::New("sync").ToLocalChecked()
   , DEFAULT_SYNC);
-  options.readOnly = NanBooleanOptionValue(
+  options.readOnly = BooleanOptionValueDef(
       optionsObj
-    , NanSymbol("readOnly")
+    , Nan::New("readOnly").ToLocalChecked()
     , DEFAULT_READONLY
   );
-  options.writeMap = NanBooleanOptionValue(
+  options.writeMap = BooleanOptionValueDef(
       optionsObj
-    , NanSymbol("writeMap")
+    , Nan::New("writeMap").ToLocalChecked()
     , DEFAULT_READONLY
   );
-  options.metaSync = NanBooleanOptionValue(
+  options.metaSync = BooleanOptionValueDef(
       optionsObj
-    , NanSymbol("metaSync")
+    , Nan::New("metaSync").ToLocalChecked()
     , DEFAULT_METASYNC
   );
-  options.mapAsync = NanBooleanOptionValue(
+  options.mapAsync = BooleanOptionValueDef(
       optionsObj
-    , NanSymbol("mapAsync")
+    , Nan::New("mapAsync").ToLocalChecked()
     , DEFAULT_MAPASYNC
   );
-  options.fixedMap = NanBooleanOptionValue(
+  options.fixedMap = BooleanOptionValueDef(
       optionsObj
-    , NanSymbol("fixedMap")
+    , Nan::New("fixedMap").ToLocalChecked()
     , DEFAULT_FIXEDMAP
   );
-  options.metaSync = NanBooleanOptionValue(
+  options.metaSync = BooleanOptionValueDef(
       optionsObj
-    , NanSymbol("notls")
+    , Nan::New("notls").ToLocalChecked()
     , DEFAULT_NOTLS
   );
 
   OpenWorker* worker = new OpenWorker(
       database
-    , new NanCallback(callback)
+    , new Nan::Callback(callback)
     , options
   );
 
-  NanAsyncQueueWorker(worker);
+  Nan::AsyncQueueWorker(worker);
 
-  NanReturnUndefined();
+  info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Database::Close) {
-  NanScope();
+  Nan::HandleScope scope;
 
   NL_METHOD_SETUP_COMMON_ONEARG(close)
 
   CloseWorker* worker = new CloseWorker(
       database
-    , new NanCallback(callback)
+    , new Nan::Callback(callback)
   );
 
   if (database->iterators.size() > 0) {
@@ -426,36 +426,36 @@ NAN_METHOD(Database::Close) {
 
         if (!iterator->ended) {
           v8::Local<v8::Function> end =
-              NanObjectWrapHandle(iterator)
-                ->Get(NanSymbol("end"))
+              iterator->handle()
+                ->Get(Nan::New("end").ToLocalChecked())
                   .As<v8::Function>();
           v8::Local<v8::Value> argv[] = {
-              v8::FunctionTemplate::New()->GetFunction() // empty callback
+              Nan::GetFunction(Nan::New<v8::FunctionTemplate>()).ToLocalChecked() // empty callback
           };
           v8::TryCatch try_catch;
-          end->Call(NanObjectWrapHandle(iterator), 1, argv);
+          Nan::Callback(end).Call(iterator->handle(), 1, argv);
           if (try_catch.HasCaught()) {
             node::FatalException(try_catch);
           }
         }
     }
   } else {
-    NanAsyncQueueWorker(worker);
+    Nan::AsyncQueueWorker(worker);
   }
 
-  NanReturnUndefined();
+  info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Database::Put) {
-  NanScope();
+  Nan::HandleScope scope;
 
   NL_METHOD_SETUP_COMMON(put, 2, 3)
 
-  NL_CB_ERR_IF_NULL_OR_UNDEFINED(args[0], key)
-  NL_CB_ERR_IF_NULL_OR_UNDEFINED(args[1], value)
+  NL_CB_ERR_IF_NULL_OR_UNDEFINED(info[0], key)
+  NL_CB_ERR_IF_NULL_OR_UNDEFINED(info[1], value)
 
-  v8::Local<v8::Object> keyHandle = args[0].As<v8::Object>();
-  v8::Local<v8::Object> valueHandle = args[1].As<v8::Object>();
+  v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
+  v8::Local<v8::Object> valueHandle = info[1].As<v8::Object>();
   NL_STRING_OR_BUFFER_TO_MDVAL(key, keyHandle, key)
   NL_STRING_OR_BUFFER_TO_MDVAL(value, valueHandle, value)
 
@@ -463,78 +463,78 @@ NAN_METHOD(Database::Put) {
 
   WriteWorker* worker  = new WriteWorker(
       database
-    , new NanCallback(callback)
+    , new Nan::Callback(callback)
     , key
     , value
     , keyHandle
     , valueHandle
   );
-  NanAsyncQueueWorker(worker);
+  Nan::AsyncQueueWorker(worker);
 
-  NanReturnUndefined();
+  info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Database::Get) {
-  NanScope();
+  Nan::HandleScope scope;
 
   NL_METHOD_SETUP_COMMON(get, 1, 2)
 
-  NL_CB_ERR_IF_NULL_OR_UNDEFINED(args[0], key)
+  NL_CB_ERR_IF_NULL_OR_UNDEFINED(info[0], key)
 
-  v8::Local<v8::Object> keyHandle = args[0].As<v8::Object>();
+  v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
   NL_STRING_OR_BUFFER_TO_MDVAL(key, keyHandle, key)
 
   //std::cerr << "->GETFROMDB(" << (char*)key.mv_data << "(" << key.mv_size << ")" << std::endl;
 
-  bool asBuffer = NanBooleanOptionValue(optionsObj, NanSymbol("asBuffer"), true);
+  bool asBuffer = BooleanOptionValueDef(optionsObj, Nan::New("asBuffer").ToLocalChecked(), true);
 
   ReadWorker* worker = new ReadWorker(
       database
-    , new NanCallback(callback)
+    , new Nan::Callback(callback)
     , key
     , asBuffer
     , keyHandle
   );
-  NanAsyncQueueWorker(worker);
+  Nan::AsyncQueueWorker(worker);
 
-  NanReturnUndefined();
+  info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Database::Delete) {
-  NanScope();
+  Nan::HandleScope scope;
 
   NL_METHOD_SETUP_COMMON(del, 1, 2)
 
-  NL_CB_ERR_IF_NULL_OR_UNDEFINED(args[0], key)
+  NL_CB_ERR_IF_NULL_OR_UNDEFINED(info[0], key)
 
-  v8::Local<v8::Object> keyHandle = args[0].As<v8::Object>();
+  v8::Local<v8::Object> keyHandle = info[0].As<v8::Object>();
   NL_STRING_OR_BUFFER_TO_MDVAL(key, keyHandle, key)
 
   DeleteWorker* worker = new DeleteWorker(
       database
-    , new NanCallback(callback)
+    , new Nan::Callback(callback)
     , key
     , keyHandle
   );
-  NanAsyncQueueWorker(worker);
+  Nan::AsyncQueueWorker(worker);
 
-  NanReturnUndefined();
+  info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Database::Batch) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  if ((args.Length() == 0 || args.Length() == 1) && !args[0]->IsArray()) {
+  if ((info.Length() == 0 || info.Length() == 1) && !info[0]->IsArray()) {
     v8::Local<v8::Object> optionsObj;
-    if (args.Length() > 0 && args[0]->IsObject()) {
-      optionsObj = v8::Local<v8::Object>::Cast(args[0]);
+    if (info.Length() > 0 && info[0]->IsObject()) {
+      optionsObj = v8::Local<v8::Object>::Cast(info[0]);
     }
-    NanReturnValue(WriteBatch::NewInstance(args.This(), optionsObj));
+    info.GetReturnValue().Set(WriteBatch::NewInstance(info.This(), optionsObj));
   }
 
   NL_METHOD_SETUP_COMMON(batch, 1, 2)
 
-  v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(args[0]);
+  v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(info[0]);
   WriteBatch* batch = new WriteBatch(database);
 
   for (unsigned int i = 0; i < array->Length(); i++) {
@@ -543,16 +543,16 @@ NAN_METHOD(Database::Batch) {
 
     v8::Local<v8::Object> obj = v8::Local<v8::Object>::Cast(array->Get(i));
 
-    NL_CB_ERR_IF_NULL_OR_UNDEFINED(obj->Get(NanSymbol("type")), type)
+    NL_CB_ERR_IF_NULL_OR_UNDEFINED(obj->Get(Nan::New("type").ToLocalChecked()), type)
 
-    v8::Local<v8::Object> keyBuffer = obj->Get(NanSymbol("key")).As<v8::Object>();
+    v8::Local<v8::Object> keyBuffer = obj->Get(Nan::New("key").ToLocalChecked()).As<v8::Object>();
     NL_CB_ERR_IF_NULL_OR_UNDEFINED(keyBuffer, key)
 
-    if (obj->Get(NanSymbol("type"))->StrictEquals(NanSymbol("del"))) {
+    if (obj->Get(Nan::New("type").ToLocalChecked())->StrictEquals(Nan::New("del").ToLocalChecked())) {
       NL_STRING_OR_BUFFER_TO_MDVAL(key, keyBuffer, key)
       batch->Delete(keyBuffer, key);
-    } else if (obj->Get(NanSymbol("type"))->StrictEquals(NanSymbol("put"))) {
-      v8::Local<v8::Object> valueBuffer = obj->Get(NanSymbol("value")).As<v8::Object>();
+    } else if (obj->Get(Nan::New("type").ToLocalChecked())->StrictEquals(Nan::New("put").ToLocalChecked())) {
+      v8::Local<v8::Object> valueBuffer = obj->Get(Nan::New("value").ToLocalChecked()).As<v8::Object>();
       NL_CB_ERR_IF_NULL_OR_UNDEFINED(valueBuffer, value)
       NL_STRING_OR_BUFFER_TO_MDVAL(key, keyBuffer, key)
       NL_STRING_OR_BUFFER_TO_MDVAL(value, valueBuffer, value)
@@ -563,17 +563,17 @@ NAN_METHOD(Database::Batch) {
 
   batch->Write(callback);
 
-  NanReturnUndefined();
+  info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Database::Iterator) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  Database* database = node::ObjectWrap::Unwrap<Database>(args.This());
+  Database* database = Nan::ObjectWrap::Unwrap<Database>(info.This());
 
   v8::Local<v8::Object> optionsObj;
-  if (args.Length() > 0 && args[0]->IsObject()) {
-    optionsObj = v8::Local<v8::Object>::Cast(args[0]);
+  if (info.Length() > 0 && info[0]->IsObject()) {
+    optionsObj = v8::Local<v8::Object>::Cast(info[0]);
   }
 
   // each iterator gets a unique id for this Database, so we can
@@ -581,8 +581,8 @@ NAN_METHOD(Database::Iterator) {
   uint32_t id = database->currentIteratorId++;
   v8::TryCatch try_catch;
   v8::Handle<v8::Object> iteratorHandle = Iterator::NewInstance(
-      args.This()
-    , v8::Number::New(id)
+      info.This()
+    , Nan::New<v8::Number>(id)
     , optionsObj
   );
   if (try_catch.HasCaught()) {
@@ -590,12 +590,12 @@ NAN_METHOD(Database::Iterator) {
   }
 
   nlmdb::Iterator *iterator =
-      node::ObjectWrap::Unwrap<nlmdb::Iterator>(iteratorHandle);
+      Nan::ObjectWrap::Unwrap<nlmdb::Iterator>(iteratorHandle);
 
   // register our iterator
   database->iterators[id] = iterator;
 
-  NanReturnValue(iteratorHandle);
+  info.GetReturnValue().Set(iteratorHandle);
 }
 
 } // namespace nlmdb

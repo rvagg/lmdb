@@ -6,7 +6,7 @@
 #include <node_buffer.h>
 #include <string.h>
 #include <nan.h>
- 
+
 #include "database.h"
 #include "iterator.h"
 #include "iterator_async.h"
@@ -139,21 +139,21 @@ void Iterator::Release () {
 void checkEndCallback (Iterator* iterator) {
   iterator->nexting = false;
   if (iterator->endWorker != NULL) {
-    NanAsyncQueueWorker(iterator->endWorker);
+    Nan::AsyncQueueWorker(iterator->endWorker);
     iterator->endWorker = NULL;
   }
 }
 
 NAN_METHOD(Iterator::Next) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  Iterator* iterator = node::ObjectWrap::Unwrap<Iterator>(args.This());
+  Iterator* iterator = Nan::ObjectWrap::Unwrap<Iterator>(info.This());
 
-  if (args.Length() == 0 || !args[0]->IsFunction()) {
-    return NanThrowError("next() requires a callback argument");
+  if (info.Length() == 0 || !info[0]->IsFunction()) {
+    return Nan::ThrowError("next() requires a callback argument");
   }
 
-  v8::Local<v8::Function> callback = args[0].As<v8::Function>();
+  v8::Local<v8::Function> callback = info[0].As<v8::Function>();
 
   if (iterator->ended) {
     NL_RETURN_CALLBACK_OR_ERROR(callback, "cannot call next() after end()")
@@ -165,26 +165,26 @@ NAN_METHOD(Iterator::Next) {
 
   NextWorker* worker = new NextWorker(
       iterator
-    , new NanCallback(callback)
+    , new Nan::Callback(callback)
     , checkEndCallback
   );
   iterator->nexting = true;
-  NanAsyncQueueWorker(worker);
+  Nan::AsyncQueueWorker(worker);
 
-  NanReturnValue(args.Holder());
+  info.GetReturnValue().Set(info.Holder());
 }
 
 NAN_METHOD(Iterator::End) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  Iterator* iterator = node::ObjectWrap::Unwrap<Iterator>(args.This());
+  Iterator* iterator = Nan::ObjectWrap::Unwrap<Iterator>(info.This());
   //std::cerr << "Iterator::End" << iterator->id << ", " << iterator->nexting << ", " << iterator->ended << std::endl;
 
-  if (args.Length() == 0 || !args[0]->IsFunction()) {
-    return NanThrowError("end() requires a callback argument");
+  if (info.Length() == 0 || !info[0]->IsFunction()) {
+    return Nan::ThrowError("end() requires a callback argument");
   }
 
-  v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(args[0]);
+  v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(info[0]);
 
   if (iterator->ended) {
     NL_RETURN_CALLBACK_OR_ERROR(callback, "end() already called on iterator")
@@ -192,7 +192,7 @@ NAN_METHOD(Iterator::End) {
 
   EndWorker* worker = new EndWorker(
       iterator
-    , new NanCallback(callback)
+    , new Nan::Callback(callback)
   );
   iterator->ended = true;
 
@@ -202,23 +202,23 @@ NAN_METHOD(Iterator::End) {
     iterator->endWorker = worker;
   } else {
     //std::cerr << "Iterator can be ended: " << iterator->id << std::endl;
-    NanAsyncQueueWorker(worker);
+    Nan::AsyncQueueWorker(worker);
   }
 
-  NanReturnValue(args.Holder());
+  info.GetReturnValue().Set(info.Holder());
 }
 
-static v8::Persistent<v8::FunctionTemplate> iterator_constructor;
+static Nan::Persistent<v8::FunctionTemplate> iterator_constructor;
 
 void Iterator::Init () {
-  NanScope();
+  Nan::HandleScope scope;
 
-  v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(Iterator::New);
-  NanAssignPersistent(v8::FunctionTemplate, iterator_constructor, tpl);
-  tpl->SetClassName(NanSymbol("Iterator"));
+  v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(Iterator::New);
+  iterator_constructor.Reset(tpl);
+  tpl->SetClassName(Nan::New("Iterator").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "next", Iterator::Next);
-  NODE_SET_PROTOTYPE_METHOD(tpl, "end", Iterator::End);
+  Nan::SetPrototypeMethod(tpl, "next", Iterator::Next);
+  Nan::SetPrototypeMethod(tpl, "end", Iterator::End);
 }
 
 v8::Handle<v8::Object> Iterator::NewInstance (
@@ -227,12 +227,12 @@ v8::Handle<v8::Object> Iterator::NewInstance (
       , v8::Handle<v8::Object> optionsObj
     ) {
 
-  NanScope();
+  Nan::HandleScope scope;
 
   v8::Local<v8::Object> instance;
 
   v8::Local<v8::FunctionTemplate> constructorHandle =
-      NanPersistentToLocal(iterator_constructor);
+      Nan::New(iterator_constructor);
 
   if (optionsObj.IsEmpty()) {
     v8::Handle<v8::Value> argv[] = { database, id };
@@ -246,9 +246,9 @@ v8::Handle<v8::Object> Iterator::NewInstance (
 }
 
 NAN_METHOD(Iterator::New) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  Database* database = node::ObjectWrap::Unwrap<Database>(args[0]->ToObject());
+  Database* database = Nan::ObjectWrap::Unwrap<Database>(info[0]->ToObject());
 
   //TODO: remove this, it's only here to make NL_STRING_OR_BUFFER_TO_MDVAL happy
   v8::Handle<v8::Function> callback;
@@ -257,19 +257,19 @@ NAN_METHOD(Iterator::New) {
   std::string* end = NULL;
   int limit = -1;
 
-  v8::Local<v8::Value> id = args[1];
+  v8::Local<v8::Value> id = info[1];
 
   v8::Local<v8::Object> optionsObj;
 
-  if (args.Length() > 1 && args[2]->IsObject()) {
-    optionsObj = v8::Local<v8::Object>::Cast(args[2]);
+  if (info.Length() > 1 && info[2]->IsObject()) {
+    optionsObj = v8::Local<v8::Object>::Cast(info[2]);
 
-    if (optionsObj->Has(NanSymbol("start"))
-        && (node::Buffer::HasInstance(optionsObj->Get(NanSymbol("start")))
-          || optionsObj->Get(NanSymbol("start"))->IsString())) {
+    if (optionsObj->Has(Nan::New("start").ToLocalChecked())
+        && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("start").ToLocalChecked()))
+          || optionsObj->Get(Nan::New("start").ToLocalChecked())->IsString())) {
 
       v8::Local<v8::Value> startBuffer =
-          v8::Local<v8::Value>::New(optionsObj->Get(NanSymbol("start")));
+          Nan::New<v8::Value>(optionsObj->Get(Nan::New("start").ToLocalChecked()));
 
       // ignore start if it has size 0 since a Slice can't have length 0
       if (StringOrBufferLength(startBuffer) > 0) {
@@ -278,12 +278,12 @@ NAN_METHOD(Iterator::New) {
       }
     }
 
-    if (optionsObj->Has(NanSymbol("end"))
-        && (node::Buffer::HasInstance(optionsObj->Get(NanSymbol("end")))
-          || optionsObj->Get(NanSymbol("end"))->IsString())) {
+    if (optionsObj->Has(Nan::New("end").ToLocalChecked())
+        && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("end").ToLocalChecked()))
+          || optionsObj->Get(Nan::New("end").ToLocalChecked())->IsString())) {
 
       v8::Local<v8::Value> endBuffer =
-          v8::Local<v8::Value>::New(optionsObj->Get(NanSymbol("end")));
+          Nan::New<v8::Value>(optionsObj->Get(Nan::New("end").ToLocalChecked()));
 
       // ignore end if it has size 0 since a Slice can't have length 0
       if (StringOrBufferLength(endBuffer) > 0) {
@@ -292,23 +292,23 @@ NAN_METHOD(Iterator::New) {
       }
     }
 
-    if (!optionsObj.IsEmpty() && optionsObj->Has(NanSymbol("limit"))) {
+    if (!optionsObj.IsEmpty() && optionsObj->Has(Nan::New("limit").ToLocalChecked())) {
       limit =
-        v8::Local<v8::Integer>::Cast(optionsObj->Get(NanSymbol("limit")))->Value();
+        v8::Local<v8::Integer>::Cast(optionsObj->Get(Nan::New("limit").ToLocalChecked()))->Value();
     }
   }
 
-  bool reverse = NanBooleanOptionValue(optionsObj, NanSymbol("reverse"), false);
-  bool keys = NanBooleanOptionValue(optionsObj, NanSymbol("keys"), true);
-  bool values = NanBooleanOptionValue(optionsObj, NanSymbol("values"), true);
-  bool keyAsBuffer = NanBooleanOptionValue(
+  bool reverse = BooleanOptionValueDef(optionsObj, Nan::New("reverse").ToLocalChecked(), false);
+  bool keys = BooleanOptionValueDef(optionsObj, Nan::New("keys").ToLocalChecked(), true);
+  bool values = BooleanOptionValueDef(optionsObj, Nan::New("values").ToLocalChecked(), true);
+  bool keyAsBuffer = BooleanOptionValueDef(
       optionsObj
-    , NanSymbol("keyAsBuffer")
+    , Nan::New("keyAsBuffer").ToLocalChecked()
     , true
   );
-  bool valueAsBuffer = NanBooleanOptionValue(
+  bool valueAsBuffer = BooleanOptionValueDef(
       optionsObj
-    , NanSymbol("valueAsBuffer")
+    , Nan::New("valueAsBuffer").ToLocalChecked()
     , false
   );
 
@@ -324,11 +324,11 @@ NAN_METHOD(Iterator::New) {
     , keyAsBuffer
     , valueAsBuffer
   );
-  iterator->Wrap(args.This());
+  iterator->Wrap(info.This());
 
   //std::cerr << "New Iterator " << iterator->id << std::endl;
 
-  NanReturnValue(args.This());
+  info.GetReturnValue().Set(info.This());
 }
 
 } // namespace nlmdb

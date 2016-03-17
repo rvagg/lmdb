@@ -16,7 +16,7 @@ namespace nlmdb {
 
 class BatchWriteWorker : public AsyncWorker {
 public:
-  BatchWriteWorker (WriteBatch* batch, NanCallback *callback);
+  BatchWriteWorker (WriteBatch* batch, Nan::Callback *callback);
 
   virtual ~BatchWriteWorker ();
   virtual void Execute ();

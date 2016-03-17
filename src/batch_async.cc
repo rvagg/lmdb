@@ -9,7 +9,7 @@ namespace nlmdb {
 
 BatchWriteWorker::BatchWriteWorker (
     WriteBatch* batch
-  , NanCallback *callback
+  , Nan::Callback *callback
 ) : AsyncWorker(batch->database, callback)
   , batch(batch)
 {};

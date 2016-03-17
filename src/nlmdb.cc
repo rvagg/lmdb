@@ -9,17 +9,19 @@
 
 namespace nlmdb {
 
-void Init (v8::Handle<v8::Object> target) {
+NAN_MODULE_INIT(init) {
+  Nan::HandleScope scope;
+
   Database::Init();
   WriteBatch::Init();
   Iterator::Init();
 
   v8::Local<v8::Function> nlmdb =
-      v8::FunctionTemplate::New(NLMDB)->GetFunction();
+      Nan::GetFunction(Nan::New<v8::FunctionTemplate>(NLMDB)).ToLocalChecked();
 
-  target->Set(v8::String::NewSymbol("nlmdb"), nlmdb);
+  target->Set(Nan::New("nlmdb").ToLocalChecked(), nlmdb);
 }
 
-NODE_MODULE(nlmdb, Init)
+NODE_MODULE(nlmdb, init)
 
 } // namespace nlmdb

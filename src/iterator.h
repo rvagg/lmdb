@@ -18,7 +18,7 @@ class AsyncWorker;
 
 NAN_METHOD(CreateIterator);
 
-class Iterator : public node::ObjectWrap {
+class Iterator : public Nan::ObjectWrap {
 public:
   static void Init ();
   static v8::Handle<v8::Object> NewInstance (

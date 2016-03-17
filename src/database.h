@@ -41,13 +41,13 @@ typedef struct OpenOptions {
 NAN_METHOD(NLMDB);
 
 struct Reference {
-  v8::Persistent<v8::Object> handle;
+  Nan::Persistent<v8::Object> handle;
   MDB_val val;
 
   Reference(v8::Local<v8::Value> obj, MDB_val val) : val(val) {
-    v8::Local<v8::Object> _obj = v8::Object::New();
-    _obj->Set(NanSymbol("obj"), obj);
-    NanAssignPersistent(v8::Object, handle, _obj);
+    v8::Local<v8::Object> _obj = Nan::New<v8::Object>();
+    _obj->Set(Nan::New("obj").ToLocalChecked(), obj);
+    handle.Reset(_obj);
   };
   // TODO: unpersist this baby... probably easier as a class
 };
@@ -69,11 +69,11 @@ static inline void ClearReferences (std::vector<Reference *> *references) {
   virtual int Execute (MDB_txn *txn, MDB_dbi dbi) =0;
 
  protected:
-  v8::Persistent<v8::Object> persistentHandle;
+  Nan::Persistent<v8::Object> persistentHandle;
   MDB_val key;
 };
 
-class Database : public node::ObjectWrap {
+class Database : public Nan::ObjectWrap {
 public:
   static void Init ();
   static v8::Handle<v8::Value> NewInstance (v8::Local<v8::String> &location);
