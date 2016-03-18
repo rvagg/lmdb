@@ -93,9 +93,7 @@ static inline uint64_t UInt64OptionValue(
 #define NL_RETURN_CALLBACK_OR_ERROR(callback, msg)                             \
   if (!callback.IsEmpty() && callback->IsFunction()) {                         \
     v8::Local<v8::Value> argv[] = {                                            \
-      Nan::Error(                                                              \
-        Nan::New<v8::String>(msg).ToLocalChecked()                             \
-      )                                                                        \
+      Nan::Error(msg)                                                          \
     };                                                                         \
     NL_RUN_CALLBACK(callback, argv, 1)                                         \
     info.GetReturnValue().SetUndefined();                                      \
@@ -105,11 +103,7 @@ static inline uint64_t UInt64OptionValue(
 
 
 #define NL_RUN_CALLBACK(callback, argv, length)                                \
-  v8::TryCatch try_catch;                                                      \
-  Nan::Callback(callback).Call(Nan::GetCurrentContext()->Global(), length, argv); \
-  if (try_catch.HasCaught()) {                                                 \
-    node::FatalException(try_catch);                                           \
-  }
+  Nan::MakeCallback(Nan::GetCurrentContext()->Global(), callback, length, argv);
 
 
 /* NL_METHOD_SETUP_COMMON setup the following objects:
@@ -127,14 +121,14 @@ static inline uint64_t UInt64OptionValue(
   v8::Local<v8::Object> optionsObj;                                            \
   v8::Local<v8::Function> callback;                                            \
   if (optionPos == -1 && info[callbackPos]->IsFunction()) {                    \
-    callback = v8::Local<v8::Function>::Cast(info[callbackPos]);               \
+    callback = info[callbackPos].As<v8::Function>();                           \
   } else if (optionPos != -1 && info[callbackPos - 1]->IsFunction()) {         \
-    callback = v8::Local<v8::Function>::Cast(info[callbackPos - 1]);           \
+    callback = info[callbackPos - 1].As<v8::Function>();                       \
   } else if (optionPos != -1                                                   \
         && info[optionPos]->IsObject()                                         \
         && info[callbackPos]->IsFunction()) {                                  \
-    optionsObj = v8::Local<v8::Object>::Cast(info[optionPos]);                 \
-    callback = v8::Local<v8::Function>::Cast(info[callbackPos]);               \
+    optionsObj = info[optionPos].As<v8::Object>();                             \
+    callback = info[callbackPos].As<v8::Function>();                           \
   } else {                                                                     \
     return Nan::ThrowError(#name "() requires a callback argument");           \
   }
