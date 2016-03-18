@@ -257,10 +257,23 @@ NAN_METHOD(Iterator::New) {
   if (info.Length() > 1 && info[2]->IsObject()) {
     optionsObj = v8::Local<v8::Object>::Cast(info[2]);
 
+    if (optionsObj->Has(Nan::New("gte").ToLocalChecked())
+        && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("gte").ToLocalChecked()))
+          || optionsObj->Get(Nan::New("gte").ToLocalChecked())->IsString())) {
+      optionsObj->Set(Nan::New("start").ToLocalChecked(),
+        optionsObj->Get(Nan::New("gte").ToLocalChecked()));
+    }
+
+    if (optionsObj->Has(Nan::New("lte").ToLocalChecked())
+        && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("lte").ToLocalChecked()))
+          || optionsObj->Get(Nan::New("lte").ToLocalChecked())->IsString())) {
+      optionsObj->Set(Nan::New("end").ToLocalChecked(),
+        optionsObj->Get(Nan::New("lte").ToLocalChecked()));
+    }
+
     if (optionsObj->Has(Nan::New("start").ToLocalChecked())
         && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("start").ToLocalChecked()))
           || optionsObj->Get(Nan::New("start").ToLocalChecked())->IsString())) {
-
       v8::Local<v8::Value> startBuffer =
           Nan::New<v8::Value>(optionsObj->Get(Nan::New("start").ToLocalChecked()));
 
@@ -274,7 +287,6 @@ NAN_METHOD(Iterator::New) {
     if (optionsObj->Has(Nan::New("end").ToLocalChecked())
         && (node::Buffer::HasInstance(optionsObj->Get(Nan::New("end").ToLocalChecked()))
           || optionsObj->Get(Nan::New("end").ToLocalChecked())->IsString())) {
-
       v8::Local<v8::Value> endBuffer =
           Nan::New<v8::Value>(optionsObj->Get(Nan::New("end").ToLocalChecked()));
 
@@ -287,7 +299,7 @@ NAN_METHOD(Iterator::New) {
 
     if (!optionsObj.IsEmpty() && optionsObj->Has(Nan::New("limit").ToLocalChecked())) {
       limit =
-        v8::Local<v8::Integer>::Cast(optionsObj->Get(Nan::New("limit").ToLocalChecked()))->Value();
+        optionsObj->Get(Nan::New("limit").ToLocalChecked())->Int32Value();
     }
   }
 
