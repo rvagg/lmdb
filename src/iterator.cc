@@ -145,8 +145,6 @@ void checkEndCallback (Iterator* iterator) {
 }
 
 NAN_METHOD(Iterator::Next) {
-  Nan::HandleScope scope;
-
   Iterator* iterator = Nan::ObjectWrap::Unwrap<Iterator>(info.This());
 
   if (info.Length() == 0 || !info[0]->IsFunction()) {
@@ -175,8 +173,6 @@ NAN_METHOD(Iterator::Next) {
 }
 
 NAN_METHOD(Iterator::End) {
-  Nan::HandleScope scope;
-
   Iterator* iterator = Nan::ObjectWrap::Unwrap<Iterator>(info.This());
   //std::cerr << "Iterator::End" << iterator->id << ", " << iterator->nexting << ", " << iterator->ended << std::endl;
 
@@ -246,8 +242,6 @@ v8::Handle<v8::Object> Iterator::NewInstance (
 }
 
 NAN_METHOD(Iterator::New) {
-  Nan::HandleScope scope;
-
   Database* database = Nan::ObjectWrap::Unwrap<Database>(info[0]->ToObject());
 
   //TODO: remove this, it's only here to make NL_STRING_OR_BUFFER_TO_MDVAL happy

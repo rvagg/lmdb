@@ -131,8 +131,6 @@ void WriteBatch::Init () {
 }
 
 NAN_METHOD(WriteBatch::New) {
-  Nan::HandleScope scope;
-
   Database* database = Nan::ObjectWrap::Unwrap<Database>(info[0]->ToObject());
   v8::Local<v8::Object> optionsObj;
 
@@ -169,8 +167,6 @@ v8::Handle<v8::Value> WriteBatch::NewInstance (
 }
 
 NAN_METHOD(WriteBatch::Put) {
-  Nan::HandleScope scope;
-
   WriteBatch* batch = ObjectWrap::Unwrap<WriteBatch>(info.Holder());
 
   if (batch->written) {
@@ -193,8 +189,6 @@ NAN_METHOD(WriteBatch::Put) {
 }
 
 NAN_METHOD(WriteBatch::Del) {
-  Nan::HandleScope scope;
-
   WriteBatch* batch = ObjectWrap::Unwrap<WriteBatch>(info.Holder());
 
   if (batch->written) {
@@ -214,8 +208,6 @@ NAN_METHOD(WriteBatch::Del) {
 }
 
 NAN_METHOD(WriteBatch::Clear) {
-  Nan::HandleScope scope;
-
   WriteBatch* batch = ObjectWrap::Unwrap<WriteBatch>(info.Holder());
 
   if (batch->written) {
@@ -228,8 +220,6 @@ NAN_METHOD(WriteBatch::Clear) {
 }
 
 NAN_METHOD(WriteBatch::Write) {
-  Nan::HandleScope scope;
-
   WriteBatch* batch = ObjectWrap::Unwrap<WriteBatch>(info.Holder());
 
   if (info.Length() == 0 || !info[0]->IsFunction()) {
