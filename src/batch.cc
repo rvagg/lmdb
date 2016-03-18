@@ -48,8 +48,9 @@ BatchPut::BatchPut (
 ) : BatchOp(keyHandle, key)
   , value(value)
 {
-    v8::Local<v8::Object> handle = Nan::New(persistentHandle);
-    handle->Set(Nan::New("value").ToLocalChecked(), valueHandle);
+  Nan::HandleScope scope;
+  v8::Local<v8::Object> handle = Nan::New(persistentHandle);
+  handle->Set(Nan::New("value").ToLocalChecked(), valueHandle);
 }
 
 BatchPut::~BatchPut () {
@@ -149,7 +150,6 @@ v8::Handle<v8::Value> WriteBatch::NewInstance (
         v8::Handle<v8::Object> database
       , v8::Handle<v8::Object> optionsObj = v8::Handle<v8::Object>()
     ) {
-
   Nan::HandleScope scope;
 
   v8::Local<v8::Object> instance;
