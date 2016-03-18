@@ -150,9 +150,12 @@ static inline void DisposeStringOrBufferFromMDVal(
     , MDB_val val) {
   Nan::HandleScope scope;
 
-  v8::Local<v8::Object> h = Nan::New(handle);
-  if (!node::Buffer::HasInstance(h->Get(Nan::New("obj").ToLocalChecked())))
+  v8::Local<v8::Value> obj =
+    Nan::New<v8::Object>(handle)->Get(Nan::New("obj").ToLocalChecked());
+
+  if (!node::Buffer::HasInstance(obj))
     delete[] (char*)val.mv_data;
+
   handle.Reset();
 }
 

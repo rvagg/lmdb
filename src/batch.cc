@@ -22,7 +22,7 @@ BatchOp::BatchOp (v8::Local<v8::Object> &keyHandle, MDB_val key) : key(key) {
 BatchOp::~BatchOp () {
   Nan::HandleScope scope;
 
-  v8::Local<v8::Object> handle = Nan::New(persistentHandle);
+  v8::Local<v8::Object> handle = Nan::New<v8::Object>(persistentHandle);
   v8::Local<v8::Object> keyHandle =
       handle->Get(Nan::New("key").ToLocalChecked()).As<v8::Object>();
   DisposeStringOrBufferFromMDVal(keyHandle, key);
@@ -49,14 +49,14 @@ BatchPut::BatchPut (
   , value(value)
 {
   Nan::HandleScope scope;
-  v8::Local<v8::Object> handle = Nan::New(persistentHandle);
+  v8::Local<v8::Object> handle = Nan::New<v8::Object>(persistentHandle);
   handle->Set(Nan::New("value").ToLocalChecked(), valueHandle);
 }
 
 BatchPut::~BatchPut () {
   Nan::HandleScope scope;
 
-  v8::Local<v8::Object> handle = Nan::New(persistentHandle);
+  v8::Local<v8::Object> handle = Nan::New<v8::Object>(persistentHandle);
   v8::Local<v8::Object> valueHandle =
       handle->Get(Nan::New("value").ToLocalChecked()).As<v8::Object>();
 
@@ -106,9 +106,9 @@ void WriteBatch::Delete (v8::Local<v8::Object> &keyHandle, MDB_val key) {
 }
 
 void WriteBatch::Clear () {
-    for (std::vector< BatchOp* >::iterator it = operations->begin()
-      ; it != operations->end()
-      ; ) {
+  for (std::vector< BatchOp* >::iterator it = operations->begin()
+    ; it != operations->end()
+    ; ) {
 
     delete *it;
     it = operations->erase(it);
@@ -148,12 +148,12 @@ v8::Handle<v8::Value> WriteBatch::NewInstance (
         v8::Handle<v8::Object> database
       , v8::Handle<v8::Object> optionsObj = v8::Handle<v8::Object>()
     ) {
-  Nan::HandleScope scope;
+  Nan::EscapableHandleScope scope;
 
   v8::Local<v8::Object> instance;
 
   v8::Local<v8::FunctionTemplate> constructorHandle =
-      Nan::New(writebatch_constructor);
+      Nan::New<v8::FunctionTemplate>(writebatch_constructor);
 
   if (optionsObj.IsEmpty()) {
     v8::Handle<v8::Value> argv[] = { database };
@@ -163,7 +163,7 @@ v8::Handle<v8::Value> WriteBatch::NewInstance (
     instance = constructorHandle->GetFunction()->NewInstance(2, argv);
   }
 
-  return instance;
+  return scope.Escape(instance);
 }
 
 NAN_METHOD(WriteBatch::Put) {

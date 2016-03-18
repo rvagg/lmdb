@@ -10,14 +10,12 @@
 namespace nlmdb {
 
 NAN_MODULE_INIT(init) {
-  Nan::HandleScope scope;
-
   Database::Init();
   WriteBatch::Init();
   Iterator::Init();
 
   v8::Local<v8::Function> nlmdb =
-      Nan::GetFunction(Nan::New<v8::FunctionTemplate>(NLMDB)).ToLocalChecked();
+      Nan::New<v8::FunctionTemplate>(NLMDB)->GetFunction();
 
   target->Set(Nan::New("nlmdb").ToLocalChecked(), nlmdb);
 }

@@ -301,12 +301,12 @@ NAN_METHOD(Database::New) {
 }
 
 v8::Handle<v8::Value> Database::NewInstance (v8::Local<v8::String> &location) {
-  Nan::HandleScope scope;
+  Nan::EscapableHandleScope scope;
 
   v8::Local<v8::Object> instance;
 
   v8::Local<v8::FunctionTemplate> constructorHandle =
-      Nan::New(database_constructor);
+      Nan::New<v8::FunctionTemplate>(database_constructor);
 
   if (location.IsEmpty()) {
     instance = constructorHandle->GetFunction()->NewInstance(0, NULL);
@@ -315,7 +315,7 @@ v8::Handle<v8::Value> Database::NewInstance (v8::Local<v8::String> &location) {
     instance = constructorHandle->GetFunction()->NewInstance(1, argv);
   }
 
-  return instance;
+  return scope.Escape(instance);
 }
 
 NAN_METHOD(Database::Open) {
@@ -422,7 +422,7 @@ NAN_METHOD(Database::Close) {
                 ->Get(Nan::New("end").ToLocalChecked())
                   .As<v8::Function>();
           v8::Local<v8::Value> argv[] = {
-              Nan::GetFunction(Nan::New<v8::FunctionTemplate>()).ToLocalChecked() // empty callback
+            Nan::New<v8::FunctionTemplate>()->GetFunction() // empty callback
           };
           v8::TryCatch try_catch;
           Nan::Callback(end).Call(iterator->handle(), 1, argv);
@@ -514,6 +514,7 @@ NAN_METHOD(Database::Batch) {
       optionsObj = v8::Local<v8::Object>::Cast(info[0]);
     }
     info.GetReturnValue().Set(WriteBatch::NewInstance(info.This(), optionsObj));
+    return;
   }
 
   NL_METHOD_SETUP_COMMON(batch, 1, 2)
