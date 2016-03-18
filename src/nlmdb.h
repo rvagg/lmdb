@@ -93,31 +93,20 @@ static inline uint64_t UInt64OptionValue(
 #define NL_RETURN_CALLBACK_OR_ERROR(callback, msg)                             \
   if (!callback.IsEmpty() && callback->IsFunction()) {                         \
     v8::Local<v8::Value> argv[] = {                                            \
-      Nan::New<v8::String>("error").ToLocalChecked() \
-    };                                                                         \
-    NL_RUN_CALLBACK(callback, argv, 1)                                         \
-    info.GetReturnValue().SetUndefined();                                                      \
-    return; \
-  }                                                                            \
-  return Nan::ThrowError(msg);
-
-#define NL2_RETURN_CALLBACK_OR_ERROR(callback, msg)                             \
-  if (!callback.IsEmpty() && callback->IsFunction()) {                         \
-    v8::Local<v8::Value> argv[] = {                                            \
-      v8::Local<v8::Value>::New(v8::Exception::Error(                          \
-        Nan::New<v8::String>(msg))                                                  \
+      Nan::Error(                                                              \
+        Nan::New<v8::String>(msg).ToLocalChecked()                             \
       )                                                                        \
     };                                                                         \
     NL_RUN_CALLBACK(callback, argv, 1)                                         \
-    info.GetReturnValue().SetUndefined();                                                      \
-    return; \
+    info.GetReturnValue().SetUndefined();                                      \
+    return;                                                                    \
   }                                                                            \
   return Nan::ThrowError(msg);
 
 
 #define NL_RUN_CALLBACK(callback, argv, length)                                \
   v8::TryCatch try_catch;                                                      \
-  Nan::Callback(callback).Call(Nan::GetCurrentContext()->Global(), length, argv);           \
+  Nan::Callback(callback).Call(Nan::GetCurrentContext()->Global(), length, argv); \
   if (try_catch.HasCaught()) {                                                 \
     node::FatalException(try_catch);                                           \
   }
@@ -131,10 +120,10 @@ static inline uint64_t UInt64OptionValue(
  */
 #define NL_METHOD_SETUP_COMMON(name, optionPos, callbackPos)                   \
   if (info.Length() == 0) {                                                    \
-    return Nan::ThrowError(#name "() requires a callback argument");             \
+    return Nan::ThrowError(#name "() requires a callback argument");           \
   }                                                                            \
   nlmdb::Database* database =                                                  \
-    Nan::ObjectWrap::Unwrap<nlmdb::Database>(info.This());                    \
+    Nan::ObjectWrap::Unwrap<nlmdb::Database>(info.This());                     \
   v8::Local<v8::Object> optionsObj;                                            \
   v8::Local<v8::Function> callback;                                            \
   if (optionPos == -1 && info[callbackPos]->IsFunction()) {                    \
@@ -147,7 +136,7 @@ static inline uint64_t UInt64OptionValue(
     optionsObj = v8::Local<v8::Object>::Cast(info[optionPos]);                 \
     callback = v8::Local<v8::Function>::Cast(info[callbackPos]);               \
   } else {                                                                     \
-    return Nan::ThrowError(#name "() requires a callback argument");             \
+    return Nan::ThrowError(#name "() requires a callback argument");           \
   }
 
 #define NL_METHOD_SETUP_COMMON_ONEARG(name) NL_METHOD_SETUP_COMMON(name, -1, 0)
@@ -155,7 +144,6 @@ static inline uint64_t UInt64OptionValue(
 // NOTE: this MUST be called on objects created by
 // NL_STRING_OR_BUFFER_TO_MDVAL
 static inline void DisposeStringOrBufferFromMDVal(
-      // v8::Local<v8::Object> handle
       v8::Local<v8::Value> handle
     , MDB_val val) {
 
@@ -166,6 +154,7 @@ static inline void DisposeStringOrBufferFromMDVal(
 static inline void DisposeStringOrBufferFromMDVal(
       Nan::Persistent<v8::Object> &handle
     , MDB_val val) {
+  Nan::HandleScope scope;
 
   v8::Local<v8::Object> h = Nan::New(handle);
   if (!node::Buffer::HasInstance(h->Get(Nan::New("obj").ToLocalChecked())))

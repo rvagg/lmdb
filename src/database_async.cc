@@ -95,7 +95,6 @@ void ReadWorker::HandleOKCallback () {
   if (asBuffer) {
     returnValue = Nan::CopyBuffer((char*)value.mv_data, value.mv_size).ToLocalChecked();
   } else {
-    // returnValue = v8::String::New((char*)value.mv_data, value.mv_size);
     returnValue = Nan::New<v8::String>((char*)value.mv_data, value.mv_size).ToLocalChecked();
   }
   v8::Local<v8::Value> argv[] = {
