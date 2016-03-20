@@ -23,10 +23,7 @@ NextWorker::NextWorker (
   , localCallback(localCallback)
 {};
 
-NextWorker::~NextWorker () {
-  delete callback;
-  callback = NULL;
-}
+NextWorker::~NextWorker () {}
 
 void NextWorker::Execute () {
 //std::cerr << "NextWorker::Execute: " << iterator->id << std::endl;
@@ -92,10 +89,7 @@ EndWorker::EndWorker (
   , iterator(iterator)
 {executed=false;};
 
-EndWorker::~EndWorker () {
-  delete callback;
-  callback = NULL;
-}
+EndWorker::~EndWorker () {}
 
 void EndWorker::Execute () {
   executed = true;

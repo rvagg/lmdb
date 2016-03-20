@@ -21,10 +21,7 @@ OpenWorker::OpenWorker (
   , options(options)
 { };
 
-OpenWorker::~OpenWorker () {
-  delete callback;
-  callback = NULL;
-}
+OpenWorker::~OpenWorker () {}
 
 void OpenWorker::Execute () {
   SetStatus(database->OpenDatabase(options));
@@ -38,10 +35,7 @@ CloseWorker::CloseWorker (
 ) : AsyncWorker(database, callback)
 {};
 
-CloseWorker::~CloseWorker () {
-  delete callback;
-  callback = NULL;
-}
+CloseWorker::~CloseWorker () {}
 
 void CloseWorker::Execute () {
   database->CloseDatabase();
@@ -88,10 +82,7 @@ ReadWorker::ReadWorker (
   , asBuffer(asBuffer)
 {};
 
-ReadWorker::~ReadWorker () {
-  delete callback;
-  callback = NULL;
-}
+ReadWorker::~ReadWorker () {}
 
 void ReadWorker::Execute () {
   SetStatus(database->GetFromDatabase(key, value));
@@ -122,10 +113,7 @@ DeleteWorker::DeleteWorker (
 ) : IOWorker(database, callback, key, keyHandle)
 {};
 
-DeleteWorker::~DeleteWorker () {
-  delete callback;
-  callback = NULL;
-}
+DeleteWorker::~DeleteWorker () {}
 
 void DeleteWorker::Execute () {
   SetStatus(database->DeleteFromDatabase(key));
@@ -158,10 +146,7 @@ WriteWorker::WriteWorker (
   SaveToPersistent("value", valueHandle);
 };
 
-WriteWorker::~WriteWorker () {
-  delete callback;
-  callback = NULL;
-}
+WriteWorker::~WriteWorker () {}
 
 void WriteWorker::Execute () {
   SetStatus(database->PutToDatabase(key, value));

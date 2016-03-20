@@ -14,10 +14,7 @@ BatchWriteWorker::BatchWriteWorker (
   , batch(batch)
 {};
 
-BatchWriteWorker::~BatchWriteWorker () {
-  delete callback;
-  callback = NULL;
-}
+BatchWriteWorker::~BatchWriteWorker () {}
 
 void BatchWriteWorker::Execute () {
   SetStatus(database->PutToDatabase(batch->operations));
