@@ -17,7 +17,7 @@ class OpenWorker : public AsyncWorker {
 public:
   OpenWorker (
       Database* database
-    , NanCallback *callback
+    , Nan::Callback *callback
     , OpenOptions options
   );
 
@@ -32,7 +32,7 @@ class CloseWorker : public AsyncWorker {
 public:
   CloseWorker (
       Database* database
-    , NanCallback *callback
+    , Nan::Callback *callback
   );
 
   virtual ~CloseWorker ();
@@ -44,7 +44,7 @@ class IOWorker    : public AsyncWorker {
 public:
   IOWorker (
       Database* database
-    , NanCallback *callback
+    , Nan::Callback *callback
     , MDB_val key
     , v8::Local<v8::Object> &keyHandle
   );
@@ -61,7 +61,7 @@ class ReadWorker : public IOWorker {
 public:
   ReadWorker (
       Database* database
-    , NanCallback *callback
+    , Nan::Callback *callback
     , MDB_val key
     , bool asBuffer
     , v8::Local<v8::Object> &keyHandle
@@ -80,7 +80,7 @@ class DeleteWorker : public IOWorker {
 public:
   DeleteWorker (
       Database* database
-    , NanCallback *callback
+    , Nan::Callback *callback
     , MDB_val key
     , v8::Local<v8::Object> &keyHandle
   );
@@ -96,7 +96,7 @@ class WriteWorker : public DeleteWorker {
 public:
   WriteWorker (
       Database* database
-    , NanCallback *callback
+    , Nan::Callback *callback
     , MDB_val key
     , MDB_val value
     , v8::Local<v8::Object> &keyHandle
@@ -117,7 +117,7 @@ class BatchWorker : public AsyncWorker {
 public:
   BatchWorker (
       Database* database
-    , NanCallback *callback
+    , Nan::Callback *callback
     , leveldb::WriteBatch* batch
     , std::vector<Reference>* references
     , bool sync
@@ -136,7 +136,7 @@ class ApproximateSizeWorker : public AsyncWorker {
 public:
   ApproximateSizeWorker (
       Database* database
-    , NanCallback *callback
+    , Nan::Callback *callback
     , MDB_val start
     , MDB_val end
     , v8::Local<v8::Object> startHandle

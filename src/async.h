@@ -13,15 +13,15 @@ namespace nlmdb {
 
 class Database;
 
-/* abstract */ class AsyncWorker : public NanAsyncWorker {
+/* abstract */ class AsyncWorker : public Nan::AsyncWorker {
 public:
   AsyncWorker (
       nlmdb::Database* database
-    , NanCallback *callback
-  ) : NanAsyncWorker(callback), database(database) {
-    NanScope();
-    v8::Local<v8::Object> obj = v8::Object::New();
-    NanAssignPersistent(v8::Object, persistentHandle, obj);
+    , Nan::Callback *callback
+  ) : Nan::AsyncWorker(callback), database(database) {
+    Nan::HandleScope scope;
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+    persistentHandle.Reset(obj);
   }
 
 protected:
@@ -31,12 +31,12 @@ protected:
     if (status.error.length() != 0) {
       char *e = new char[status.error.length() + 1];
       strcpy(e, status.error.c_str());
-      this->errmsg = e;
+      SetErrorMessage(e);
     } else if (status.code != 0) {
       const char *me = mdb_strerror(status.code);
       char *e = new char[strlen(me) + 1];
       strcpy(e, me);
-      this->errmsg = e;
+      SetErrorMessage(e);
     }
   }
 

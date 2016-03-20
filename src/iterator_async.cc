@@ -16,7 +16,7 @@ namespace nlmdb {
 
 NextWorker::NextWorker (
     Iterator* iterator
-  , NanCallback *callback
+  , Nan::Callback *callback
   , void (*localCallback)(Iterator*)
 ) : AsyncWorker(NULL, callback)
   , iterator(iterator)
@@ -32,7 +32,7 @@ void NextWorker::Execute () {
 }
 
 void NextWorker::WorkComplete () {
-  NanScope();
+  Nan::HandleScope scope;
 
   if (status.code == MDB_NOTFOUND || (status.code == 0 && status.error.length() == 0))
     HandleOKCallback();
@@ -41,7 +41,7 @@ void NextWorker::WorkComplete () {
 }
 
 void NextWorker::HandleOKCallback () {
-  NanScope();
+  Nan::HandleScope scope;
 
 //std::cerr << "NextWorker::HandleOKCallback: " << iterator->id << std::endl;
 //std::cerr << "Read [" << std::string((char*)key.mv_data, key.mv_size) << "]=[" << std::string((char*)value.mv_data, value.mv_size) << "]\n";
@@ -49,22 +49,22 @@ void NextWorker::HandleOKCallback () {
   if (status.code == MDB_NOTFOUND) {
     //std::cerr << "run callback, ended MDB_NOTFOUND\n";
     localCallback(iterator);
-    callback->Run(0, NULL);
+    callback->Call(0, NULL);
     return;
   }
 
   v8::Local<v8::Value> returnKey;
   if (iterator->keyAsBuffer) {
-    returnKey = NanNewBufferHandle((char*)key.mv_data, key.mv_size);
+    returnKey = Nan::CopyBuffer((char*)key.mv_data, key.mv_size).ToLocalChecked();
   } else {
-    returnKey = v8::String::New((char*)key.mv_data, key.mv_size);
+    returnKey = Nan::New<v8::String>((char*)key.mv_data, key.mv_size).ToLocalChecked();
   }
 
   v8::Local<v8::Value> returnValue;
   if (iterator->valueAsBuffer) {
-    returnValue = NanNewBufferHandle((char*)value.mv_data, value.mv_size);
+    returnValue = Nan::CopyBuffer((char*)value.mv_data, value.mv_size).ToLocalChecked();
   } else {
-    returnValue = v8::String::New((char*)value.mv_data, value.mv_size);
+    returnValue = Nan::New<v8::String>((char*)value.mv_data, value.mv_size).ToLocalChecked();
   }
 
   // clean up & handle the next/end state see iterator.cc/checkEndCallback
@@ -72,19 +72,19 @@ void NextWorker::HandleOKCallback () {
   localCallback(iterator);
 
   v8::Local<v8::Value> argv[] = {
-      v8::Local<v8::Value>::New(v8::Null())
+      Nan::Null()
     , returnKey
     , returnValue
   };
 
-  callback->Run(3, argv);
+  callback->Call(3, argv);
 }
 
 /** END WORKER **/
 
 EndWorker::EndWorker (
     Iterator* iterator
-  , NanCallback *callback
+  , Nan::Callback *callback
 ) : AsyncWorker(NULL, callback)
   , iterator(iterator)
 {executed=false;};
@@ -100,7 +100,7 @@ void EndWorker::Execute () {
 void EndWorker::HandleOKCallback () {
   //std::cerr << "EndWorker::HandleOKCallback: " << iterator->id << std::endl;
   iterator->Release();
-  callback->Run(0, NULL);
+  callback->Call(0, NULL);
 }
 
 } // namespace nlmdb

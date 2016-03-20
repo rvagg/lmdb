@@ -17,6 +17,7 @@ typedef struct md_status {
 } md_status;
 
 static inline char* FromV8String(v8::Local<v8::Value> from) {
+  Nan::HandleScope scope;
   size_t sz_;
   char* to;
   v8::Local<v8::String> toStr = from->ToString();
@@ -27,6 +28,7 @@ static inline char* FromV8String(v8::Local<v8::Value> from) {
 }
 
 static inline size_t StringOrBufferLength(v8::Local<v8::Value> obj) {
+  Nan::HandleScope scope;
   return node::Buffer::HasInstance(obj->ToObject())
     ? node::Buffer::Length(obj->ToObject())
     : obj->ToString()->Utf8Length();
@@ -35,15 +37,29 @@ static inline size_t StringOrBufferLength(v8::Local<v8::Value> obj) {
 static inline bool BooleanOptionValue(
       v8::Local<v8::Object> optionsObj
     , v8::Handle<v8::String> opt) {
+  Nan::HandleScope scope;
 
   return !optionsObj.IsEmpty()
     && optionsObj->Has(opt)
     && optionsObj->Get(opt)->BooleanValue();
 }
 
+static inline bool BooleanOptionValueDef(
+      v8::Local<v8::Object> optionsObj
+    , v8::Handle<v8::String> opt
+    , bool def) {
+  Nan::HandleScope scope;
+
+  return !optionsObj.IsEmpty()
+    && optionsObj->Has(opt)
+      ? optionsObj->Get(opt)->BooleanValue()
+      : def;
+}
+
 static inline bool BooleanOptionValueDefTrue(
       v8::Local<v8::Object> optionsObj
     , v8::Handle<v8::String> opt) {
+  Nan::HandleScope scope;
 
   return optionsObj.IsEmpty()
     || !optionsObj->Has(opt)
@@ -54,6 +70,7 @@ static inline uint32_t UInt32OptionValue(
       v8::Local<v8::Object> optionsObj
     , v8::Handle<v8::String> opt
     , uint32_t def) {
+  Nan::HandleScope scope;
 
   return !optionsObj.IsEmpty()
     && optionsObj->Has(opt)
@@ -66,6 +83,7 @@ static inline uint64_t UInt64OptionValue(
       v8::Local<v8::Object> optionsObj
     , v8::Handle<v8::String> opt
     , uint64_t def) {
+  Nan::HandleScope scope;
 
   return !optionsObj.IsEmpty()
     && optionsObj->Has(opt)
@@ -82,21 +100,17 @@ static inline uint64_t UInt64OptionValue(
 #define NL_RETURN_CALLBACK_OR_ERROR(callback, msg)                             \
   if (!callback.IsEmpty() && callback->IsFunction()) {                         \
     v8::Local<v8::Value> argv[] = {                                            \
-      v8::Local<v8::Value>::New(v8::Exception::Error(                          \
-        v8::String::New(msg))                                                  \
-      )                                                                        \
+      Nan::Error(msg)                                                          \
     };                                                                         \
     NL_RUN_CALLBACK(callback, argv, 1)                                         \
-    NanReturnUndefined();                                                      \
+    info.GetReturnValue().SetUndefined();                                      \
+    return;                                                                    \
   }                                                                            \
-  return NanThrowError(msg);
+  return Nan::ThrowError(msg);
+
 
 #define NL_RUN_CALLBACK(callback, argv, length)                                \
-  v8::TryCatch try_catch;                                                      \
-  callback->Call(v8::Context::GetCurrent()->Global(), length, argv);           \
-  if (try_catch.HasCaught()) {                                                 \
-    node::FatalException(try_catch);                                           \
-  }
+  Nan::MakeCallback(Nan::GetCurrentContext()->Global(), callback, length, argv);
 
 
 /* NL_METHOD_SETUP_COMMON setup the following objects:
@@ -106,24 +120,24 @@ static inline uint64_t UInt64OptionValue(
  * Will NL_THROW_RETURN if there isn't a callback in arg 0 or 1
  */
 #define NL_METHOD_SETUP_COMMON(name, optionPos, callbackPos)                   \
-  if (args.Length() == 0) {                                                    \
-    return NanThrowError(#name "() requires a callback argument");             \
+  if (info.Length() == 0) {                                                    \
+    return Nan::ThrowError(#name "() requires a callback argument");           \
   }                                                                            \
   nlmdb::Database* database =                                                  \
-    node::ObjectWrap::Unwrap<nlmdb::Database>(args.This());                    \
+    Nan::ObjectWrap::Unwrap<nlmdb::Database>(info.This());                     \
   v8::Local<v8::Object> optionsObj;                                            \
   v8::Local<v8::Function> callback;                                            \
-  if (optionPos == -1 && args[callbackPos]->IsFunction()) {                    \
-    callback = v8::Local<v8::Function>::Cast(args[callbackPos]);               \
-  } else if (optionPos != -1 && args[callbackPos - 1]->IsFunction()) {         \
-    callback = v8::Local<v8::Function>::Cast(args[callbackPos - 1]);           \
+  if (optionPos == -1 && info[callbackPos]->IsFunction()) {                    \
+    callback = info[callbackPos].As<v8::Function>();                           \
+  } else if (optionPos != -1 && info[callbackPos - 1]->IsFunction()) {         \
+    callback = info[callbackPos - 1].As<v8::Function>();                       \
   } else if (optionPos != -1                                                   \
-        && args[optionPos]->IsObject()                                         \
-        && args[callbackPos]->IsFunction()) {                                  \
-    optionsObj = v8::Local<v8::Object>::Cast(args[optionPos]);                 \
-    callback = v8::Local<v8::Function>::Cast(args[callbackPos]);               \
+        && info[optionPos]->IsObject()                                         \
+        && info[callbackPos]->IsFunction()) {                                  \
+    optionsObj = info[optionPos].As<v8::Object>();                             \
+    callback = info[callbackPos].As<v8::Function>();                           \
   } else {                                                                     \
-    return NanThrowError(#name "() requires a callback argument");             \
+    return Nan::ThrowError(#name "() requires a callback argument");           \
   }
 
 #define NL_METHOD_SETUP_COMMON_ONEARG(name) NL_METHOD_SETUP_COMMON(name, -1, 0)
@@ -131,7 +145,7 @@ static inline uint64_t UInt64OptionValue(
 // NOTE: this MUST be called on objects created by
 // NL_STRING_OR_BUFFER_TO_MDVAL
 static inline void DisposeStringOrBufferFromMDVal(
-      v8::Local<v8::Object> handle
+      v8::Local<v8::Value> handle
     , MDB_val val) {
 
   if (!node::Buffer::HasInstance(handle))
@@ -139,12 +153,17 @@ static inline void DisposeStringOrBufferFromMDVal(
 }
 
 static inline void DisposeStringOrBufferFromMDVal(
-      v8::Persistent<v8::Object> &handle
+      Nan::Persistent<v8::Object> &handle
     , MDB_val val) {
+  Nan::HandleScope scope;
 
-  if (!node::Buffer::HasInstance(NanPersistentToLocal(handle)->Get(NanSymbol("obj"))))
+  v8::Local<v8::Value> obj =
+    Nan::New<v8::Object>(handle)->Get(Nan::New("obj").ToLocalChecked());
+
+  if (!node::Buffer::HasInstance(obj))
     delete[] (char*)val.mv_data;
-  NanDispose(handle);
+
+  handle.Reset();
 }
 
 // NOTE: must call DisposeStringOrBufferFromMDVal() on objects created here
