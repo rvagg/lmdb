@@ -10,6 +10,8 @@
 namespace nlmdb {
 
 NAN_MODULE_INIT(init) {
+  Nan::HandleScope scope;
+
   Database::Init();
   WriteBatch::Init();
   Iterator::Init();

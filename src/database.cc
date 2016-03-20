@@ -384,8 +384,6 @@ NAN_METHOD(Database::Open) {
   );
 
   Nan::AsyncQueueWorker(worker);
-
-  info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Database::Close) {
@@ -434,8 +432,6 @@ NAN_METHOD(Database::Close) {
   } else {
     Nan::AsyncQueueWorker(worker);
   }
-
-  info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Database::Put) {
@@ -460,8 +456,6 @@ NAN_METHOD(Database::Put) {
     , valueHandle
   );
   Nan::AsyncQueueWorker(worker);
-
-  info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Database::Get) {
@@ -484,8 +478,6 @@ NAN_METHOD(Database::Get) {
     , keyHandle
   );
   Nan::AsyncQueueWorker(worker);
-
-  info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Database::Delete) {
@@ -503,8 +495,6 @@ NAN_METHOD(Database::Delete) {
     , keyHandle
   );
   Nan::AsyncQueueWorker(worker);
-
-  info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Database::Batch) {
@@ -547,8 +537,6 @@ NAN_METHOD(Database::Batch) {
   }
 
   batch->Write(callback);
-
-  info.GetReturnValue().SetUndefined();
 }
 
 NAN_METHOD(Database::Iterator) {
@@ -570,6 +558,7 @@ NAN_METHOD(Database::Iterator) {
   );
   if (try_catch.HasCaught()) {
     Nan::FatalException(try_catch);
+    return;
   }
 
   nlmdb::Iterator *iterator =

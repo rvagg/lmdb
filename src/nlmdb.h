@@ -17,6 +17,7 @@ typedef struct md_status {
 } md_status;
 
 static inline char* FromV8String(v8::Local<v8::Value> from) {
+  Nan::HandleScope scope;
   size_t sz_;
   char* to;
   v8::Local<v8::String> toStr = from->ToString();
@@ -27,6 +28,7 @@ static inline char* FromV8String(v8::Local<v8::Value> from) {
 }
 
 static inline size_t StringOrBufferLength(v8::Local<v8::Value> obj) {
+  Nan::HandleScope scope;
   return node::Buffer::HasInstance(obj->ToObject())
     ? node::Buffer::Length(obj->ToObject())
     : obj->ToString()->Utf8Length();
@@ -35,6 +37,7 @@ static inline size_t StringOrBufferLength(v8::Local<v8::Value> obj) {
 static inline bool BooleanOptionValue(
       v8::Local<v8::Object> optionsObj
     , v8::Handle<v8::String> opt) {
+  Nan::HandleScope scope;
 
   return !optionsObj.IsEmpty()
     && optionsObj->Has(opt)
@@ -45,6 +48,7 @@ static inline bool BooleanOptionValueDef(
       v8::Local<v8::Object> optionsObj
     , v8::Handle<v8::String> opt
     , bool def) {
+  Nan::HandleScope scope;
 
   return !optionsObj.IsEmpty()
     && optionsObj->Has(opt)
@@ -55,6 +59,7 @@ static inline bool BooleanOptionValueDef(
 static inline bool BooleanOptionValueDefTrue(
       v8::Local<v8::Object> optionsObj
     , v8::Handle<v8::String> opt) {
+  Nan::HandleScope scope;
 
   return optionsObj.IsEmpty()
     || !optionsObj->Has(opt)
@@ -65,6 +70,7 @@ static inline uint32_t UInt32OptionValue(
       v8::Local<v8::Object> optionsObj
     , v8::Handle<v8::String> opt
     , uint32_t def) {
+  Nan::HandleScope scope;
 
   return !optionsObj.IsEmpty()
     && optionsObj->Has(opt)
@@ -77,6 +83,7 @@ static inline uint64_t UInt64OptionValue(
       v8::Local<v8::Object> optionsObj
     , v8::Handle<v8::String> opt
     , uint64_t def) {
+  Nan::HandleScope scope;
 
   return !optionsObj.IsEmpty()
     && optionsObj->Has(opt)
